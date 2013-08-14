@@ -9,10 +9,23 @@ matrix:
     allow_failure:
         - php: 5.5
 
-before_script: composer install --dev --prefer-source > /dev/null
+before_script:
+    - composer install --dev --prefer-source > /dev/null
+    - composer create-project sylius/sylius -s dev --dev --prefer-source --no-interaction > /dev/null
+    - cd sylius
+    - composer require sylius/cart-bundle:dev-master > /dev/null
+    - app/console doctrine:database:create --env=test > /dev/null
+    - app/console doctrine:schema:create --env=test > /dev/null
+    - chmod -R 777 app/cache app/logs
+    - app/console cache:warmup --env=test > /dev/null
+    - chmod -R 777 app/cache app/logs
+    - cd ..
 
-script: bin/phpspec run -fpretty --verbose
+script:
+    - bin/phpspec run -fpretty --verbose
+    - cd sylius
+    - php -d memory_limit=2048M bin/behat --no-snippets --no-paths --verbose --tags '@cart'
 
-notifications:
-    email: "travis-ci@sylius.org"
-    irc:   "irc.freenode.org#sylius-dev"
+#notifications:
+#    email: "travis-ci@sylius.org"
+#    irc: "irc.freenode.org#sylius-dev"
